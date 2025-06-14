@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASP Barcode Generator</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.2/dist/semantic.min.css"
+    />
+    <link rel="icon" type="image/png" href="./Asserts/aspLogo.jpg" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.2/dist/semantic.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      body {
+        padding: 2em;
+      }
+      #barcode-container {
+        margin-top: 2em;
+        display: none;
+        text-align: center;
+      }
+      canvas {
+        margin-top: 1em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ui container">
+      <h2 class="ui teal header center aligned">
+        <img src="./Asserts/aspLogo.jpg" alt="ASP Logo" id="page-logo" />
+        Barcode Generator
+    </h2>
+      <div class="ui form segment">
+        <div class="field">
+          <label>Enter Barcode Number</label>
+          <input
+            type="text"
+            id="barcode-number"
+            placeholder="Ex: 400638133393"
+          />
+        </div>
+
+        <div class="two fields">
+          <div class="field">
+            <label>Barcode Width</label>
+            <input
+              type="number"
+              id="barcode-width"
+              placeholder="Ex: 2"
+              min="1"
+              max="10"
+            />
+          </div>
+          <div class="field">
+            <label>Barcode Height</label>
+            <input
+              type="number"
+              id="barcode-height"
+              placeholder="Ex: 100"
+              min="100"
+              max="200"
+            />
+          </div>
+        </div>
+
+        <div class="two fields">
+          <div class="field">
+            <label>Barcode Type</label>
+            <select id="barcode-type" class="ui search dropdown">
+              <option value="EAN13" selected>EAN13</option>
+              <option value="CODE128">CODE128</option>
+              <option value="UPC">UPC</option>
+              <option value="ITF">ITF</option>
+              <option value="MSI">MSI</option>
+              <option value="Pharmacode">Pharmacode</option>
+              <option value="Codabar">Codabar</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Download Format</label>
+            <select id="download-format" class="ui dropdown">
+              <option value="png" selected>PNG</option>
+              <option value="jpg">JPG</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ui center aligned basic segment">
+          <button class="ui green button" id="view-barcode">
+            View Barcode
+          </button>
+          <button class="ui blue button" id="download-barcode">Download</button>
+        </div>
+      </div>
+
+      <div id="barcode-container">
+        <h4 class="ui dividing header">Generated Barcode</h4>
+        <canvas id="barcode"></canvas>
+      </div>
+    </div>
+    <script>
+      $(".ui.dropdown").dropdown();
+
+      if (
+        document.getElementById("barcode-width") &&
+        document.getElementById("barcode-height")
+      ) {
+        document.getElementById("barcode-width").value = 3;
+        document.getElementById("barcode-height").value = 150;
+      }
+
+      function generateBarcode() {
+        const value = document.getElementById("barcode-number").value.trim();
+        const type = document.getElementById("barcode-type").value;
+        let width = parseInt(document.getElementById("barcode-width").value);
+        let heigth = parseInt(document.getElementById("barcode-height").value);
+
+        if (width < 1 || width > 10) {
+          alert("Width should between 1 and 10");
+        }
+
+        if (heigth < 100 || heigth > 200) {
+          alert("Height should between 100 and 200");
+        }
+
+        if (!width) {
+          width = 2;
+        }
+
+        if (!heigth) {
+          heigth = 100;
+        }
+
+        if (!value) {
+          alert("Please enter a barcode number.");
+          return;
+        }
+
+        const canvas = document.getElementById("barcode");
+        const scale = 3;
+
+        canvas.width = 300 * scale;
+        canvas.height = 100 * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.scale(scale, scale);
+
+        JsBarcode("#barcode", value, {
+          format: type,
+          displayValue: true,
+          fontSize: 16,
+          height: heigth,
+          width: width,
+        });
+      }
+
+      document.getElementById("view-barcode").addEventListener("click", () => {
+        generateBarcode();
+        document.getElementById("barcode-container").style.display = "block";
+      });
+
+      document
+        .getElementById("download-barcode")
+        .addEventListener("click", () => {
+          generateBarcode();
+          const value = document.getElementById("barcode-number").value.trim();
+          const canvas = document.getElementById("barcode");
+          const format = document.getElementById("download-format").value;
+          const imageData = canvas.toDataURL(
+            `image/${format === "jpg" ? "jpeg" : "png"}`
+          );
+          const link = document.createElement("a");
+          link.download = `ASP-${value}-Barcode${format}`;
+
+          if (format === "png" || format === "jpg") {
+            link.href = imageData;
+            link.click();
+          } else if (format === "pdf") {
+            const canvas = document.getElementById("barcode");
+            const imageData = canvas.toDataURL("image/png");
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+              orientation: "portrait",
+              unit: "mm",
+              format: "a4",
+            });
+
+            const pdfWidth = 180;
+            const pdfHeight = (canvas.height / canvas.width) * pdfWidth;
+
+            pdf.addImage(imageData, "PNG", 15, 40, pdfWidth, pdfHeight);
+            pdf.save("ASP-" + value + "-Barcode.pdf");
+          }
+        });
+    </script>
+  </body>
+</html>
