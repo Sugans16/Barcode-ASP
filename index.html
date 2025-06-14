@@ -32,7 +32,7 @@
       <h2 class="ui teal header center aligned">
         <img src="./Asserts/aspLogo.jpg" alt="ASP Logo" id="page-logo" />
         Barcode Generator
-    </h2>
+      </h2>
       <div class="ui form segment">
         <div class="field">
           <label>Enter Barcode Number</label>
@@ -102,6 +102,18 @@
         <h4 class="ui dividing header">Generated Barcode</h4>
         <canvas id="barcode"></canvas>
       </div>
+      <div class="ui tiny modal" id="error-modal">
+        <div class="header">
+          <i class="exclamation circle red icon"></i>
+          Input Error
+        </div>
+        <div class="content">
+          <p>Please provide proper input to generate the barcode.</p>
+        </div>
+        <div class="actions">
+          <div class="ui red deny button">OK</div>
+        </div>
+      </div>
     </div>
     <script>
       $(".ui.dropdown").dropdown();
@@ -148,14 +160,18 @@
         canvas.height = 100 * scale;
         const ctx = canvas.getContext("2d");
         ctx.scale(scale, scale);
-
-        JsBarcode("#barcode", value, {
-          format: type,
-          displayValue: true,
-          fontSize: 16,
-          height: heigth,
-          width: width,
-        });
+        try {
+          JsBarcode("#barcode", value, {
+            format: type,
+            displayValue: true,
+            fontSize: 16,
+            height: heigth,
+            width: width,
+          });
+        } catch (e) {
+        $('#error-modal').modal('show');
+        document.getElementById("barcode-number").value = ""
+        }
       }
 
       document.getElementById("view-barcode").addEventListener("click", () => {
